@@ -9,19 +9,22 @@ import sys
 from FileHandler import FileHandler
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
     QMainWindow,
     QLabel,
     QVBoxLayout,
+    QHBoxLayout,
     QFileDialog,
     QPushButton,
     QShortcut,
     QGroupBox,
     QStatusBar,
-    QScrollArea
+    QScrollArea,
+    QComboBox,
+    QLineEdit,
 )
 
 
@@ -85,18 +88,19 @@ class App(QMainWindow):
     def createGlobalSettings(self):
         groupbox = QGroupBox('Global Settings')
 
-        vbox = QVBoxLayout()
-        groupbox.setLayout(vbox)
+        box = QVBoxLayout()
+        groupbox.setLayout(box)
 
         return groupbox
     
     def createFrameSettings(self):
         groupbox = QGroupBox('Frame Settings')
-        vbox = QVBoxLayout()
+        box = QVBoxLayout()
         
 
         
         scroll = QtWidgets.QScrollArea()
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll.setWidgetResizable(True)
         
         # labellist = []
@@ -107,20 +111,52 @@ class App(QMainWindow):
         #     # myform.addRow(labellist[i],combolist[i])
         #     scroll.setWidget(labellist[i],combolist[i])
         
-        labellist = []
+        # labellist = []
+        # for i in range(10):
+        #     labellist.append(QtWidgets.QLabel('mylabel'))
+        #     scroll.setWidget(labellist[i])
+        
+        widget = QtWidgets.QWidget()
+        scroll.setWidget(widget)
+        
+        layout = QtWidgets.QFormLayout(self)
+        layout.setVerticalSpacing(20)
+        widget.setLayout(layout)
+        
         for i in range(10):
-            labellist.append(QtWidgets.QLabel('mylabel'))
-            scroll.setWidget(labellist[i])
+            vbox = QtWidgets.QWidget()
+            vBoxLayout = QVBoxLayout()
+            vbox.setLayout(vBoxLayout)
+            
+            # boxLayout.addWidget(QtWidgets.QLabel('Name:'))
+            
+            hbox = QtWidgets.QWidget()
+            hBoxLayout = QHBoxLayout()
+            hbox.setLayout(hBoxLayout)
+            hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{"Fuel Consumption: LFC"}</b>'))
+            hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{"FEE9"}<b>'))
+            vBoxLayout.addWidget(hbox)
+            
+            hbox = QtWidgets.QWidget()
+            hBoxLayout = QHBoxLayout()
+            hbox.setLayout(hBoxLayout)
+            hBoxLayout.addWidget(QtWidgets.QLabel(f'Filter: <b>{"Fuel Consumption: LFC"}</b>'))
+            hBoxLayout.addWidget(QtWidgets.QLabel(f'Interval: <b>{"FEE9"}<b>'))
+            vBoxLayout.addWidget(hbox)
+            
+            # filterBox = QComboBox()
+            # interval = QLineEdit("100")
+            # boxLayout.addRow(QtWidgets.QLabel('Filter:'), filterBox,
+            #                  QtWidgets.QLabel('Interval:'), QLineEdit,
+            #                  QtWidgets.QLabel('ms'))
+            
+            layout.addWidget(vbox)
         
-        
-        
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(scroll)
         
         groupbox.setLayout(QVBoxLayout())
         groupbox.layout().addWidget(scroll)
-        vbox.addWidget(groupbox)
-        groupbox.setLayout(vbox)
+        box.addWidget(groupbox)
+        groupbox.setLayout(box)
 
         return groupbox
 
