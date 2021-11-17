@@ -27,6 +27,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QSpacerItem,
     QSizePolicy,
+    QFormLayout,
 )
 
 
@@ -127,22 +128,36 @@ class App(QMainWindow):
         if(self.fileName):
             # scroll.setEnabled(True)
             print("show data")
-            for i in self.fileData["frames"]:
+            for n, i in enumerate(self.fileData["frames"]):
     
                 hbox = QtWidgets.QWidget()
-                hBoxLayout = QHBoxLayout()
+                hBoxLayout = QFormLayout()
                 hBoxLayout.setContentsMargins(0,0,0,0)
                 hbox.setLayout(hBoxLayout)
-                hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
-                hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
+                # hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
+                # hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
+                hBoxLayout.addRow(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'),
+                                     QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
                 self.frameSettingsLayout.addRow(hbox)
                 
                 hbox = QtWidgets.QWidget()
                 hBoxLayout = QHBoxLayout()
                 hBoxLayout.setContentsMargins(0,0,0,0)
                 hbox.setLayout(hBoxLayout)
+                
+                filterBoxTypes = {"never": "Never", "change": "On Change", "interval": "Max. Interval"}
                 filterBox = QComboBox()
-                interval = QLineEdit("100")
+                filterBox.addItems(list(filterBoxTypes.values()))
+                filterBox.setCurrentText(filterBoxTypes[i["filter"]])
+
+                if (i["filter"] == "interval"):
+                    if "time" not in i:
+                        self.fileData["frames"][n]["time"] = ""
+                    interval = QLineEdit(i["time"])
+                else:
+                    interval = QLineEdit("")
+                    interval.setEnabled(False)
+
                 hBoxLayout.addWidget(QtWidgets.QLabel('Filter:'))
                 hBoxLayout.addWidget(filterBox)
                 hBoxLayout.addWidget(QtWidgets.QLabel('Interval:'))
