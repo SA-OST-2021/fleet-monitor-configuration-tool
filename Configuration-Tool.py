@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QComboBox,
     QLineEdit,
+    QSpacerItem,
+    QSizePolicy,
 )
 
 
@@ -76,13 +78,13 @@ class App(QMainWindow):
         self.statusbar.setSizeGripEnabled(False)
         self.setStatusBar(self.statusbar)
            
-        layout = QVBoxLayout()
-        layout.addWidget(self.createGlobalSettings(), 2)
-        layout.addWidget(self.createFrameSettings(), 10)        
+        self.mainLayout = QVBoxLayout()
+        self.mainLayout.addWidget(self.createGlobalSettings(), 2)
+        self.mainLayout.addWidget(self.createFrameSettings(), 10)        
 
-        widget = QWidget()
-        widget.setLayout(layout)
-        self.setCentralWidget(widget)
+        mainWidget = QWidget()
+        mainWidget.setLayout(self.mainLayout)
+        self.setCentralWidget(mainWidget)
 
 
     def createGlobalSettings(self):
@@ -97,68 +99,63 @@ class App(QMainWindow):
         groupbox = QGroupBox('Frame Settings')
         box = QVBoxLayout()
         
-
-        
         scroll = QtWidgets.QScrollArea()
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll.setWidgetResizable(True)
         
-        # labellist = []
-        # combolist = []
-        # for i in range(10):
-        #     labellist.append(QtWidgets.QLabel('mylabel'))
-        #     combolist.append(QtWidgets.QComboBox())
-        #     # myform.addRow(labellist[i],combolist[i])
-        #     scroll.setWidget(labellist[i],combolist[i])
-        
-        # labellist = []
-        # for i in range(10):
-        #     labellist.append(QtWidgets.QLabel('mylabel'))
-        #     scroll.setWidget(labellist[i])
         
         widget = QtWidgets.QWidget()
         scroll.setWidget(widget)
         
-        layout = QtWidgets.QFormLayout(self)
-        layout.setVerticalSpacing(20)
-        widget.setLayout(layout)
+        self.frameSettingsLayout = QtWidgets.QFormLayout()
+        self.frameSettingsLayout.setVerticalSpacing(10)
+        widget.setLayout(self.frameSettingsLayout)
         
-        for i in range(10):
-            vbox = QtWidgets.QWidget()
-            vBoxLayout = QVBoxLayout()
-            vbox.setLayout(vBoxLayout)
-            
-            # boxLayout.addWidget(QtWidgets.QLabel('Name:'))
-            
-            hbox = QtWidgets.QWidget()
-            hBoxLayout = QHBoxLayout()
-            hbox.setLayout(hBoxLayout)
-            hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{"Fuel Consumption: LFC"}</b>'))
-            hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{"FEE9"}<b>'))
-            vBoxLayout.addWidget(hbox)
-            
-            hbox = QtWidgets.QWidget()
-            hBoxLayout = QHBoxLayout()
-            hbox.setLayout(hBoxLayout)
-            hBoxLayout.addWidget(QtWidgets.QLabel(f'Filter: <b>{"Fuel Consumption: LFC"}</b>'))
-            hBoxLayout.addWidget(QtWidgets.QLabel(f'Interval: <b>{"FEE9"}<b>'))
-            vBoxLayout.addWidget(hbox)
-            
-            # filterBox = QComboBox()
-            # interval = QLineEdit("100")
-            # boxLayout.addRow(QtWidgets.QLabel('Filter:'), filterBox,
-            #                  QtWidgets.QLabel('Interval:'), QLineEdit,
-            #                  QtWidgets.QLabel('ms'))
-            
-            layout.addWidget(vbox)
+        print("createFrameSettings")
         
-        
+        self.updateFrameSettings()
+             
         groupbox.setLayout(QVBoxLayout())
         groupbox.layout().addWidget(scroll)
         box.addWidget(groupbox)
         groupbox.setLayout(box)
 
         return groupbox
+ 
+    
+    def updateFrameSettings(self):
+        if(self.fileName):
+            # scroll.setEnabled(True)
+            print("show data")
+            for i in self.fileData["frames"]:
+    
+                hbox = QtWidgets.QWidget()
+                hBoxLayout = QHBoxLayout()
+                hBoxLayout.setContentsMargins(0,0,0,0)
+                hbox.setLayout(hBoxLayout)
+                hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
+                hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
+                self.frameSettingsLayout.addRow(hbox)
+                
+                hbox = QtWidgets.QWidget()
+                hBoxLayout = QHBoxLayout()
+                hBoxLayout.setContentsMargins(0,0,0,0)
+                hbox.setLayout(hBoxLayout)
+                filterBox = QComboBox()
+                interval = QLineEdit("100")
+                hBoxLayout.addWidget(QtWidgets.QLabel('Filter:'))
+                hBoxLayout.addWidget(filterBox)
+                hBoxLayout.addWidget(QtWidgets.QLabel('Interval:'))
+                hBoxLayout.addWidget(interval)
+                hBoxLayout.addWidget(QtWidgets.QLabel('ms'))
+                self.frameSettingsLayout.addRow(hbox)
+                
+                self.frameSettingsLayout.addRow(QtWidgets.QLabel(''))
+        else:
+            # scroll.setEnabled(False)
+            pass
+            # scroll.delete()
+
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -170,12 +167,14 @@ class App(QMainWindow):
         self.fileName = event.mimeData().urls()[0].toLocalFile()
         self.fileData = self.handler.loadFile(self, self.fileName)
         self.statusBar().showMessage("Open File: " + self.fileName)
+        self.updateFrameSettings()
 
     def openFile(self):
         self.fileName, _ = QFileDialog.getOpenFileName(self, "Open configuration file", "", "JSON Files (*.json);;All Files (*)")
         if self.fileName:
             self.fileData = self.handler.loadFile(self, self.fileName)
             self.statusBar().showMessage("Open File: " + self.fileName)
+            self.updateFrameSettings()
  
     def saveFile(self):
         if self.fileName:
