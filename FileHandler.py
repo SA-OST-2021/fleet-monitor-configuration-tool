@@ -39,7 +39,10 @@ if __name__ == "__main__":
     data = {}
     data['frames'] = []
     for i in initial:
-        data['frames'].append({'pgn': i, 'name': initial[i], 'filter': 'never'})
+        data['frames'].append({'pgn': i,
+                               'name': initial[i],
+                               'active': True,
+                               'filter': 'nofilter'})
     
     
     with open('demo.json', 'w') as f:

@@ -6,6 +6,7 @@ Created on Mon Nov 15 11:49:13 2021
 """
 
 import sys
+# import qdarktheme
 from FileHandler import FileHandler
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize
@@ -100,24 +101,46 @@ class App(QMainWindow):
         groupbox = QGroupBox('Frame Settings')
         box = QVBoxLayout()
         
-        scroll = QtWidgets.QScrollArea()
-        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        scroll.setWidgetResizable(True)
+        # scroll = QtWidgets.QScrollArea()
+        # scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        # scroll.setWidgetResizable(True)
         
         
-        widget = QtWidgets.QWidget()
-        scroll.setWidget(widget)
+        # widget = QtWidgets.QWidget()
+        # scroll.setWidget(widget)
         
-        self.frameSettingsLayout = QtWidgets.QFormLayout()
-        self.frameSettingsLayout.setVerticalSpacing(10)
-        widget.setLayout(self.frameSettingsLayout)
+        # self.frameSettingsLayout = QtWidgets.QFormLayout()
+        # self.frameSettingsLayout.setVerticalSpacing(10)
+        # widget.setLayout(self.frameSettingsLayout)
         
         print("createFrameSettings")
+        
+        self.tableWidget = QtWidgets.QTableWidget()
+        # self.tableWidget.setGeometry(QtCore.QRect(220, 100, 411, 392))
+        self.tableWidget.setColumnCount(5)
+        
+        
+        self.tableWidget.setHorizontalHeaderLabels(["Active", "PGN", "Name", "Filter", "Interval [ms]"])
+        self.tableWidget.verticalHeader().hide()
+        
+        header = self.tableWidget.horizontalHeader()  
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
+
+        self.tableWidget.show()
+        
+        self.active = []
+        self.filters = []
+        self.intervals = []
+
         
         self.updateFrameSettings()
              
         groupbox.setLayout(QVBoxLayout())
-        groupbox.layout().addWidget(scroll)
+        groupbox.layout().addWidget(self.tableWidget)
         box.addWidget(groupbox)
         groupbox.setLayout(box)
 
@@ -126,64 +149,125 @@ class App(QMainWindow):
     
     def updateFrameSettings(self):
         if(self.fileName):
-            # scroll.setEnabled(True)
-            print("show data")
-            for n, i in enumerate(self.fileData["frames"]):
-    
-                hbox = QtWidgets.QWidget()
-                hBoxLayout = QFormLayout()
-                hBoxLayout.setContentsMargins(0,0,0,0)
-                hbox.setLayout(hBoxLayout)
-                # hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
-                # hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
-                hBoxLayout.addRow(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'),
-                                     QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
-                self.frameSettingsLayout.addRow(hbox)
-                
-                hbox = QtWidgets.QWidget()
-                hBoxLayout = QHBoxLayout()
-                hBoxLayout.setContentsMargins(0,0,0,0)
-                hbox.setLayout(hBoxLayout)
-                
-                filterBoxTypes = {"never": "Never", "change": "On Change", "interval": "Max. Interval"}
-                filterBox = QComboBox()
-                filterBox.addItems(list(filterBoxTypes.values()))
-                filterBox.setCurrentText(filterBoxTypes[i["filter"]])
-
-                if (i["filter"] == "interval"):
-                    if "time" not in i:
-                        self.fileData["frames"][n]["time"] = ""
-                    interval = QLineEdit(i["time"])
-                else:
-                    interval = QLineEdit("")
-                    interval.setEnabled(False)
-
-                hBoxLayout.addWidget(QtWidgets.QLabel('Filter:'))
-                hBoxLayout.addWidget(filterBox)
-                hBoxLayout.addWidget(QtWidgets.QLabel('Interval:'))
-                hBoxLayout.addWidget(interval)
-                hBoxLayout.addWidget(QtWidgets.QLabel('ms'))
-                self.frameSettingsLayout.addRow(hbox)
-                
-                self.frameSettingsLayout.addRow(QtWidgets.QLabel(''))
-        else:
-            # scroll.setEnabled(False)
-            pass
-            # scroll.delete()
+            self.tableWidget.setRowCount(len(self.fileData["frames"]))
             
-            self.tableWidget = QtWidgets.QTableWidget()
-            self.tableWidget.setGeometry(QtCore.QRect(220, 100, 411, 392))
-            self.tableWidget.setColumnCount(2)
-            self.tableWidget.setRowCount(5)
-            self.tableWidget.show()
+            for row, i in enumerate(self.fileData["frames"]):
+                cell = QtWidgets.QTableWidgetItem()
+                cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.active.append(QtWidgets.QCheckBox())
+                checkBoxWidget = QWidget()
+                layoutCheckBox = QHBoxLayout(checkBoxWidget)
+                layoutCheckBox.addWidget(self.active[-1])
+                layoutCheckBox.setAlignment(QtCore.Qt.AlignCenter)
+                layoutCheckBox.setContentsMargins(0,0,0,0)
+                self.active[-1].setChecked(i["active"])
+                self.tableWidget.setCellWidget(row, 0, checkBoxWidget)
+                self.tableWidget.setItem(row, 0, cell)
+                
+                cell = QtWidgets.QTableWidgetItem(f"{i['pgn']}")
+                cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.tableWidget.setItem(row, 1, cell)
+                self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
+                
+                cell = QtWidgets.QTableWidgetItem(f"{i['name']}")
+                cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.tableWidget.setItem(row, 2, cell)
+                self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
+                
+                
+                cell = QtWidgets.QTableWidgetItem()
+                cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.filters.append(QtWidgets.QComboBox())
+                filterBoxTypes = {"nofilter": "No Filter", "change": "On Change", "interval": "Max. Interval"}
+                self.filters[-1].addItems(list(filterBoxTypes.values()))
+                self.filters[-1].setCurrentText(filterBoxTypes[i["filter"]])
+                self.tableWidget.setCellWidget(row, 3, self.filters[-1])
+                self.tableWidget.setItem(row, 3, cell)
+                
+                
+                if(i["filter"] == "interval"):
+                    if "time" not in i:
+                        self.fileData["frames"][row]["time"] = "1000"
+                else:
+                    self.fileData.pop("time", None)  # Remove Key if not used
+                value = self.fileData["frames"][row].get("time", "")
+                # cell.setTextAlignment(QtCore.Qt.AlignCenter)
+                cell = QtWidgets.QTableWidgetItem()
+                cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                self.intervals.append(QtWidgets.QLineEdit(value))
+                self.intervals[-1].setStyleSheet("QLineEdit { border: none }")
+                self.intervals[-1].setAlignment(QtCore.Qt.AlignCenter)
+                self.intervals[-1].setFont(self.tableWidget.font())
+                f = self.intervals[-1].font()
+                f.setPointSize(self.tableWidget.font().pointSize())
+                self.intervals[-1].setFont(f)
+                self.intervals[-1].setEnabled(i["filter"] == "interval")
+                self.tableWidget.setCellWidget(row, 4, self.intervals[-1])
+                self.tableWidget.setItem(row, 4, cell)
+                self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
+        
+        
+        
+        
+        # if(self.fileName):
+        #     # scroll.setEnabled(True)
+        #     print("show data")
+        #     for n, i in enumerate(self.fileData["frames"]):
+    
+        #         hbox = QtWidgets.QWidget()
+        #         hBoxLayout = QFormLayout()
+        #         hBoxLayout.setContentsMargins(0,0,0,0)
+        #         hbox.setLayout(hBoxLayout)
+        #         # hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
+        #         # hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
+        #         hBoxLayout.addRow(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'),
+        #                              QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
+        #         self.frameSettingsLayout.addRow(hbox)
+                
+        #         hbox = QtWidgets.QWidget()
+        #         hBoxLayout = QHBoxLayout()
+        #         hBoxLayout.setContentsMargins(0,0,0,0)
+        #         hbox.setLayout(hBoxLayout)
+                
+        #         filterBoxTypes = {"never": "Never", "change": "On Change", "interval": "Max. Interval"}
+        #         filterBox = QComboBox()
+        #         filterBox.addItems(list(filterBoxTypes.values()))
+        #         filterBox.setCurrentText(filterBoxTypes[i["filter"]])
 
-            attr = ['one', 'two', 'three', 'four', 'five']
-            i = 0
-            for j in attr:
-                self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(j))
-                comboBox = QtWidgets.QComboBox()
-                self.tableWidget.setCellWidget(i, 1, comboBox)
-                i += 1
+        #         if (i["filter"] == "interval"):
+        #             if "time" not in i:
+        #                 self.fileData["frames"][n]["time"] = ""
+        #             interval = QLineEdit(i["time"])
+        #         else:
+        #             interval = QLineEdit("")
+        #             interval.setEnabled(False)
+
+        #         hBoxLayout.addWidget(QtWidgets.QLabel('Filter:'))
+        #         hBoxLayout.addWidget(filterBox)
+        #         hBoxLayout.addWidget(QtWidgets.QLabel('Interval:'))
+        #         hBoxLayout.addWidget(interval)
+        #         hBoxLayout.addWidget(QtWidgets.QLabel('ms'))
+        #         self.frameSettingsLayout.addRow(hbox)
+                
+        #         self.frameSettingsLayout.addRow(QtWidgets.QLabel(''))
+        # else:
+        #     # scroll.setEnabled(False)
+        #     pass
+        #     # scroll.delete()
+            
+        #     self.tableWidget = QtWidgets.QTableWidget()
+        #     self.tableWidget.setGeometry(QtCore.QRect(220, 100, 411, 392))
+        #     self.tableWidget.setColumnCount(2)
+        #     self.tableWidget.setRowCount(5)
+        #     self.tableWidget.show()
+
+        #     attr = ['one', 'two', 'three', 'four', 'five']
+        #     i = 0
+        #     for j in attr:
+        #         self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(j))
+        #         comboBox = QtWidgets.QComboBox()
+        #         self.tableWidget.setCellWidget(i, 1, comboBox)
+        #         i += 1
 
 
     def dragEnterEvent(self, event):
@@ -222,7 +306,7 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     app.lastWindowClosed.connect(QtWidgets.QApplication.quit)
-    # app.setStyle('Windows')
+    # app.setStyleSheet(qdarktheme.load_stylesheet())
 
     window = App()
     window.show()
