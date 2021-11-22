@@ -6,11 +6,13 @@ Created on Mon Nov 15 11:49:13 2021
 """
 
 import sys
-# import qdarktheme
+import json
+from pathlib import Path
+from functools import partial
 from FileHandler import FileHandler
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QSize
-from PyQt5.QtGui import QKeySequence, QFont
+from PyQt5.QtGui import QKeySequence, QFont, QIntValidator
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -18,6 +20,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QVBoxLayout,
     QHBoxLayout,
+    QGridLayout,
     QFileDialog,
     QPushButton,
     QShortcut,
@@ -40,26 +43,25 @@ class App(QMainWindow):
         self.fileName = None
         self.fileData = None
         
+        try:
+            with open("sys.tmp") as f:
+                self.fileName = json.load(f)["file"]
+                if(Path(self.fileName).is_file()):
+                    self.fileData = self.handler.loadFile(self, self.fileName)
+                else:
+                    self.fileName = None
+        except:
+            pass
+        
         self.initUI()
         self.setWindowState(self.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
-        # self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.activateWindow()
 
     def initUI(self):
-        self.resize(QSize(650, 900))
+        self.resize(QSize(900, 900))
         self.setMinimumSize(QSize(200, 200))
         self.setWindowTitle("Fleet-Monitor Configuator") 
         self.setAcceptDrops(True)
-        
-        # centralWidget = QWidget(self)          
-        # self.setCentralWidget(centralWidget)   
- 
-        # gridLayout = QGridLayout(self)     
-        # centralWidget.setLayout(gridLayout)  
- 
-        # title = QLabel("Fleet-Monitor Configuator", self) 
-        # title.setAlignment(QtCore.Qt.AlignCenter)
-        # gridLayout.addWidget(title, 0, 0)
 
         menu = self.menuBar().addMenu('File')
         action = menu.addAction('Open')
@@ -91,35 +93,30 @@ class App(QMainWindow):
 
     def createGlobalSettings(self):
         groupbox = QGroupBox('Global Settings')
-
-        box = QVBoxLayout()
+        box = QGridLayout()
+        box.setAlignment(QtCore.Qt.AlignTop)
         groupbox.setLayout(box)
+        
+        self.unknownFrames = QtWidgets.QCheckBox("Send Unknown Frames")
+        self.unknownFrames.setChecked(self.fileData.get("unknownframes", False))
+        self.unknownFrames.toggled.connect(lambda x: self.fileData.update(unknownframes = self.unknownFrames.isChecked()))
+        box.addWidget(self.unknownFrames, 0, 0)
+        
+        self.frameName = QtWidgets.QCheckBox("Send Frame Name")
+        self.frameName.setChecked(self.fileData.get("framename", False))
+        self.frameName.toggled.connect(lambda x: self.fileData.update(framename = self.frameName.isChecked()))
+        box.addWidget(self.frameName, 1, 0)
 
         return groupbox
     
     def createFrameSettings(self):
         groupbox = QGroupBox('Frame Settings')
         box = QVBoxLayout()
+        groupbox.setLayout(box)
         
-        # scroll = QtWidgets.QScrollArea()
-        # scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        # scroll.setWidgetResizable(True)
-        
-        
-        # widget = QtWidgets.QWidget()
-        # scroll.setWidget(widget)
-        
-        # self.frameSettingsLayout = QtWidgets.QFormLayout()
-        # self.frameSettingsLayout.setVerticalSpacing(10)
-        # widget.setLayout(self.frameSettingsLayout)
-        
-        print("createFrameSettings")
-        
+        self.filterBoxTypes = {"nofilter": "No Filter", "change": "On Change", "interval": "Max. Interval"}
         self.tableWidget = QtWidgets.QTableWidget()
-        # self.tableWidget.setGeometry(QtCore.QRect(220, 100, 411, 392))
         self.tableWidget.setColumnCount(5)
-        
-        
         self.tableWidget.setHorizontalHeaderLabels(["Active", "PGN", "Name", "Filter", "Interval [ms]"])
         self.tableWidget.verticalHeader().hide()
         
@@ -129,27 +126,21 @@ class App(QMainWindow):
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)
+        header.sectionClicked.connect(self.onSectionClicked)
 
-        self.tableWidget.show()
-        
-        self.active = []
-        self.filters = []
-        self.intervals = []
-
-        
-        self.updateFrameSettings()
-             
-        groupbox.setLayout(QVBoxLayout())
-        groupbox.layout().addWidget(self.tableWidget)
-        box.addWidget(groupbox)
-        groupbox.setLayout(box)
-
+        self.tableWidget.show()        
+        self.updateFrameSettings()    
+        box.addWidget(self.tableWidget)
         return groupbox
  
     
     def updateFrameSettings(self):
         if(self.fileName):
+            self.setWindowTitle("Fleet-Monitor Configuator: " + Path(self.fileName).name)
             self.tableWidget.setRowCount(len(self.fileData["frames"]))
+            self.active = []
+            self.filters = []
+            self.intervals = []
             
             for row, i in enumerate(self.fileData["frames"]):
                 cell = QtWidgets.QTableWidgetItem()
@@ -161,11 +152,13 @@ class App(QMainWindow):
                 layoutCheckBox.setAlignment(QtCore.Qt.AlignCenter)
                 layoutCheckBox.setContentsMargins(0,0,0,0)
                 self.active[-1].setChecked(i["active"])
+                self.active[-1].toggled.connect(partial(self.activeCallback, row))  
                 self.tableWidget.setCellWidget(row, 0, checkBoxWidget)
                 self.tableWidget.setItem(row, 0, cell)
                 
                 cell = QtWidgets.QTableWidgetItem(f"{i['pgn']}")
                 cell.setFlags(QtCore.Qt.ItemIsEnabled)
+                cell.setTextAlignment(QtCore.Qt.AlignCenter)
                 self.tableWidget.setItem(row, 1, cell)
                 self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
                 
@@ -174,24 +167,22 @@ class App(QMainWindow):
                 self.tableWidget.setItem(row, 2, cell)
                 self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
                 
-                
                 cell = QtWidgets.QTableWidgetItem()
                 cell.setFlags(QtCore.Qt.ItemIsEnabled)
                 self.filters.append(QtWidgets.QComboBox())
-                filterBoxTypes = {"nofilter": "No Filter", "change": "On Change", "interval": "Max. Interval"}
-                self.filters[-1].addItems(list(filterBoxTypes.values()))
-                self.filters[-1].setCurrentText(filterBoxTypes[i["filter"]])
+                
+                self.filters[-1].addItems(list(self.filterBoxTypes.values()))
+                self.filters[-1].setCurrentText(self.filterBoxTypes[i["filter"]])
+                self.filters[-1].currentIndexChanged.connect(partial(self.filterCallback, row))  
                 self.tableWidget.setCellWidget(row, 3, self.filters[-1])
                 self.tableWidget.setItem(row, 3, cell)
                 
-                
                 if(i["filter"] == "interval"):
                     if "time" not in i:
-                        self.fileData["frames"][row]["time"] = "1000"
+                        self.fileData["frames"][row]["time"] = "0"
                 else:
-                    self.fileData.pop("time", None)  # Remove Key if not used
+                    self.fileData["frames"][row].pop("time", None)  # Remove Key if not used
                 value = self.fileData["frames"][row].get("time", "")
-                # cell.setTextAlignment(QtCore.Qt.AlignCenter)
                 cell = QtWidgets.QTableWidgetItem()
                 cell.setFlags(QtCore.Qt.ItemIsEnabled)
                 self.intervals.append(QtWidgets.QLineEdit(value))
@@ -202,73 +193,35 @@ class App(QMainWindow):
                 f.setPointSize(self.tableWidget.font().pointSize())
                 self.intervals[-1].setFont(f)
                 self.intervals[-1].setEnabled(i["filter"] == "interval")
+                self.intervals[-1].setStyleSheet("* {background-color: rgba(0,0,0,0);}")
+                self.intervals[-1].textChanged.connect(partial(self.intervalCallback, row))
+                self.intervals[-1].returnPressed.connect(self.updateFrameSettings)
+                self.intervals[-1].setValidator(QIntValidator())
                 self.tableWidget.setCellWidget(row, 4, self.intervals[-1])
                 self.tableWidget.setItem(row, 4, cell)
                 self.tableWidget.viewport().setFocusPolicy(QtCore.Qt.NoFocus)
-        
-        
-        
-        
-        # if(self.fileName):
-        #     # scroll.setEnabled(True)
-        #     print("show data")
-        #     for n, i in enumerate(self.fileData["frames"]):
-    
-        #         hbox = QtWidgets.QWidget()
-        #         hBoxLayout = QFormLayout()
-        #         hBoxLayout.setContentsMargins(0,0,0,0)
-        #         hbox.setLayout(hBoxLayout)
-        #         # hBoxLayout.addWidget(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'))
-        #         # hBoxLayout.addWidget(QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
-        #         hBoxLayout.addRow(QtWidgets.QLabel(f'PGN: <b>{i["pgn"]}<b>'),
-        #                              QtWidgets.QLabel(f'Name: <b>{i["name"]}</b>'))
-        #         self.frameSettingsLayout.addRow(hbox)
-                
-        #         hbox = QtWidgets.QWidget()
-        #         hBoxLayout = QHBoxLayout()
-        #         hBoxLayout.setContentsMargins(0,0,0,0)
-        #         hbox.setLayout(hBoxLayout)
-                
-        #         filterBoxTypes = {"never": "Never", "change": "On Change", "interval": "Max. Interval"}
-        #         filterBox = QComboBox()
-        #         filterBox.addItems(list(filterBoxTypes.values()))
-        #         filterBox.setCurrentText(filterBoxTypes[i["filter"]])
 
-        #         if (i["filter"] == "interval"):
-        #             if "time" not in i:
-        #                 self.fileData["frames"][n]["time"] = ""
-        #             interval = QLineEdit(i["time"])
-        #         else:
-        #             interval = QLineEdit("")
-        #             interval.setEnabled(False)
 
-        #         hBoxLayout.addWidget(QtWidgets.QLabel('Filter:'))
-        #         hBoxLayout.addWidget(filterBox)
-        #         hBoxLayout.addWidget(QtWidgets.QLabel('Interval:'))
-        #         hBoxLayout.addWidget(interval)
-        #         hBoxLayout.addWidget(QtWidgets.QLabel('ms'))
-        #         self.frameSettingsLayout.addRow(hbox)
-                
-        #         self.frameSettingsLayout.addRow(QtWidgets.QLabel(''))
-        # else:
-        #     # scroll.setEnabled(False)
-        #     pass
-        #     # scroll.delete()
-            
-        #     self.tableWidget = QtWidgets.QTableWidget()
-        #     self.tableWidget.setGeometry(QtCore.QRect(220, 100, 411, 392))
-        #     self.tableWidget.setColumnCount(2)
-        #     self.tableWidget.setRowCount(5)
-        #     self.tableWidget.show()
+    def activeCallback(self, index):
+        self.fileData["frames"][index]["active"] = self.active[index].isChecked()
 
-        #     attr = ['one', 'two', 'three', 'four', 'five']
-        #     i = 0
-        #     for j in attr:
-        #         self.tableWidget.setItem(i, 0, QtWidgets.QTableWidgetItem(j))
-        #         comboBox = QtWidgets.QComboBox()
-        #         self.tableWidget.setCellWidget(i, 1, comboBox)
-        #         i += 1
+    def filterCallback(self, index):
+        table = {self.filterBoxTypes[k]:k for k in self.filterBoxTypes}
+        self.fileData["frames"][index]["filter"] = table[self.filters[index].currentText()]
+        self.updateFrameSettings()
 
+    def intervalCallback(self, index):
+        try:
+            value = int(self.intervals[index].text())
+        except ValueError:
+            value = 0
+        self.fileData["frames"][index]["time"] = str(abs(value))
+        
+    def onSectionClicked(self, index):
+        if(index == 0):
+            state = self.active[0].isChecked()
+            for i in self.active:
+                i.setChecked(not state)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -288,17 +241,23 @@ class App(QMainWindow):
             self.fileData = self.handler.loadFile(self, self.fileName)
             self.statusBar().showMessage("Open File: " + self.fileName)
             self.updateFrameSettings()
+            with open ("sys.tmp", "w") as f:
+                json.dump({"file": self.fileName}, f)
  
     def saveFile(self):
         if self.fileName:
             self.handler.saveFile(self, self.fileName, self.fileData)
             self.statusBar().showMessage("Save File: " + self.fileName)
+            self.updateFrameSettings()
         
     def saveFileAs(self):
         self.fileName, _ = QFileDialog.getSaveFileName(self, "Save configuration file", self.fileName, "JSON Files (*.json);;All Files (*)")
         if self.fileName:
             self.handler.saveFile(self, self.fileName, self.fileData)
             self.statusBar().showMessage("Save File as: " + self.fileName)
+            self.updateFrameSettings()
+            with open ("sys.tmp", "w") as f:
+                json.dump({"file": self.fileName}, f)
 
 
 
@@ -310,5 +269,4 @@ if __name__ == "__main__":
 
     window = App()
     window.show()
-
     sys.exit(app.exec_())
