@@ -10,8 +10,8 @@ import json
 if __name__ == "__main__":
     
     system = {
-        'ssid':     'fleet-network',
-        'password': 'admin',
+        'ssid':     'fleet-monitor',
+        'password': 'password',
         'mode':     'auto'        # auto, lan, wlan
     }
     

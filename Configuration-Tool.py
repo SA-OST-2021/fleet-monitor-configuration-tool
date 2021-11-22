@@ -234,6 +234,8 @@ class App(QMainWindow):
         self.fileData = self.handler.loadFile(self, self.fileName)
         self.statusBar().showMessage("Open File: " + self.fileName)
         self.updateFrameSettings()
+        with open ("sys.tmp", "w") as f:
+            json.dump({"file": self.fileName}, f)
 
     def openFile(self):
         self.fileName, _ = QFileDialog.getOpenFileName(self, "Open configuration file", "", "JSON Files (*.json);;All Files (*)")
