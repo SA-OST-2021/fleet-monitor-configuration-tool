@@ -41,7 +41,7 @@ class App(QMainWindow):
         super().__init__()
         self.handler = FileHandler
         self.fileName = None
-        self.fileData = None
+        self.fileData = {}
         
         try:
             with open("sys.tmp") as f:
