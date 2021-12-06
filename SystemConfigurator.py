@@ -10,9 +10,14 @@ import json
 if __name__ == "__main__":
     
     system = {
-        'ssid':     'fleet-monitor',
-        'password': 'password',
-        'mode':     'auto'        # auto, lan, wlan
+        'ssid':             'fleet-monitor',
+        'password':         'password',
+        'connection':       'auto',              # auto, lan, wlan
+        'config':           'local',             # remote
+        'host_ip':          '10.3.141.1',
+        'host_port':        8080,
+        'overwrite_file':   False,  
+        'bootloader':       True,
     }
     
     with open('system.json', 'w') as f:
