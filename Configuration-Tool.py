@@ -1,9 +1,34 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 15 11:49:13 2021
-
-@author: flori
-"""
+###############################################################################
+# file    Configuration-Tool.py
+###############################################################################
+# brief   Graphical User Interface to change the FMS-Frame Filter Configuration
+###############################################################################
+# author  Florian Baumgartner
+# version 1.0
+# date    2021-12-15
+###############################################################################
+# MIT License
+#
+# Copyright (c) 2021 Florian Baumgartner
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+###############################################################################
 
 import sys
 import json
@@ -62,21 +87,27 @@ class App(QMainWindow):
         self.setMinimumSize(QSize(200, 200))
         self.setWindowTitle("Fleet-Monitor Configuator") 
         self.setAcceptDrops(True)
-
-        menu = self.menuBar().addMenu('File')
-        action = menu.addAction('Open')
-        action.triggered.connect(self.openFile)   
-        action = menu.addAction('Save')
-        action.triggered.connect(self.saveFile)
-        action = menu.addAction('Save as')
-        action.triggered.connect(self.saveFileAs)
         
-        self.shortcut = QShortcut(QKeySequence("Ctrl+O"), self)
-        self.shortcut.activated.connect(self.openFile)
-        self.shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
-        self.shortcut.activated.connect(self.saveFile)
-        self.shortcut = QShortcut(QKeySequence("Ctrl+Shift+S"), self)
-        self.shortcut.activated.connect(self.saveFileAs)
+        menu = self.menuBar().addMenu('File')
+        translate = QtCore.QCoreApplication.translate
+        
+        actionOpen = QtWidgets.QAction(self)
+        actionOpen.setText(translate("MainWindow", "Open"))
+        actionOpen.setShortcut(translate("MainWindow", "Ctrl+O"))
+        actionOpen.triggered.connect(self.openFile)
+        menu.addAction(actionOpen)
+        
+        actionSave = QtWidgets.QAction(self)
+        actionSave.setText(translate("MainWindow", "Save"))
+        actionSave.setShortcut(translate("MainWindow", "Ctrl+S"))
+        actionSave.triggered.connect(self.saveFile)
+        menu.addAction(actionSave)
+        
+        actionSaveAs = QtWidgets.QAction(self)
+        actionSaveAs.setText(translate("MainWindow", "Save as"))
+        actionSaveAs.setShortcut(translate("MainWindow", "Ctrl+Shift+S"))
+        actionSaveAs.triggered.connect(self.saveFileAs)
+        menu.addAction(actionSaveAs)
         
         self.statusbar = QStatusBar()
         self.statusbar.setSizeGripEnabled(False)
