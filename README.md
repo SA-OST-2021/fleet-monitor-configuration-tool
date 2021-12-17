@@ -1,2 +1,2 @@
-# fleet-monitor-configuration-tool
-Python script that allow the user to easily configurate the device
+# Fleet Monitor Configuration Tool
+This repository contains the filter configuration tool written in Python.
