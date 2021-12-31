@@ -1,1 +1,1 @@
-{"ssid": "fleet-monitor", "password": "password", "connection": "auto", "config": "local", "host_ip": "10.3.141.1", "host_port": 8080, "overwrite_file": false, "bootloader": true}
+{"ssid": "fleet-monitor", "password": "password", "connection": "auto", "config": "remote", "host_ip": "10.3.141.1", "host_port": 8080, "overwrite_file": false, "bootloader": false}
